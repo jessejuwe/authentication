@@ -1,6 +1,9 @@
 import { useState, useRef, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
+
 import AuthContext from '../../store/auth-context';
 
+import { API_KEY } from '../../helpers/helper';
 import classes from './AuthForm.module.css';
 
 const AuthForm = () => {
@@ -11,6 +14,8 @@ const AuthForm = () => {
   const passwordInputRef = useRef();
 
   const authCTX = useContext(AuthContext);
+
+  const history = useHistory();
 
   const switchAuthModeHandler = () => {
     setIsLogin(prevState => !prevState);
@@ -42,14 +47,10 @@ const AuthForm = () => {
     let message;
 
     if (isLogin) {
-      url =
-        'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAoIehQzmX7DlFX3ZLm6al8d3oHPD7kiE8';
-
+      url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`;
       message = 'User successfully logged in!';
     } else {
-      url =
-        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyAoIehQzmX7DlFX3ZLm6al8d3oHPD7kiE8';
-
+      url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`;
       message = 'New user registered';
     }
 
@@ -61,16 +62,21 @@ const AuthForm = () => {
 
       if (response.ok) {
         emailInputRef.current.value = passwordInputRef.current.value = '';
-        console.log(message);
 
         const data = await response.json();
-        console.log(data);
 
-        authCTX.login(data.idToken);
+        // prettier-ignore
+        const expirationTime = new Date(new Date().getTime() + (+data.expiresIn * 1000));
+
+        authCTX.login(data.idToken, expirationTime.toISOString());
+
+        history.replace('/');
+
+        // TODO: show success modal
+
+        console.log(message);
       } else {
         const data = await response.json();
-
-        // TODO: show error modal
 
         // helper variable
         let errorMessage = 'Authentication failed!';
@@ -78,10 +84,11 @@ const AuthForm = () => {
         // prettier-ignore
         if (data && data.error && data.error.message) errorMessage = data.error.message;
 
+        // TODO: show error modal
+
         throw new Error(errorMessage);
       }
     } catch (error) {
-      console.error(`💥 ${error.message} 💥`);
       alert(`💥 ${error.message} 💥`);
     }
   };
