@@ -19,9 +19,9 @@ export const AuthContextProvider = props => {
   const contextValue = { token, isLoggedIn, login, logout };
 
   return (
-    <AuthContextProvider value={contextValue}>
+    <AuthContext.Provider value={contextValue}>
       {props.children}
-    </AuthContextProvider>
+    </AuthContext.Provider>
   );
 };
 
